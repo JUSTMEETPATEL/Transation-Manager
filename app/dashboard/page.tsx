@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -19,12 +19,20 @@ import {
   Clock,
   PieChartIcon,
   Edit,
-} from "lucide-react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+  Sparkles,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,10 +40,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -44,26 +58,33 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 type Transaction = {
-  id: string
-  type: "credit" | "debit"
-  amount: number
-  account: string
-  counterparty: string
-  date: string
-  reference: string
-  category?: string
-}
+  id: string;
+  type: "credit" | "debit";
+  amount: number;
+  account: string;
+  counterparty: string;
+  date: string;
+  reference: string;
+  category?: string;
+};
 
 type CategoryData = {
-  name: string
-  value: number
-  color: string
-}
+  name: string;
+  value: number;
+  color: string;
+};
 
 // Predefined categories with colors
 const CATEGORIES = [
@@ -75,207 +96,368 @@ const CATEGORIES = [
   { name: "Utilities", color: "#6366f1" },
   { name: "Housing", color: "#ef4444" },
   { name: "Healthcare", color: "#06b6d4" },
+  { name: "Income", color: "#22c55e" },
   { name: "Other", color: "#9ca3af" },
-]
-
-// Keywords for automatic categorization
-const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  Groceries: ["grocery", "supermarket", "food", "market", "mart", "store", "kirana"],
-  Dining: ["restaurant", "cafe", "coffee", "diner", "food", "eat", "dining", "lunch", "dinner", "breakfast"],
-  Entertainment: ["movie", "theatre", "concert", "show", "game", "netflix", "prime", "hotstar", "subscription"],
-  Transportation: ["uber", "ola", "taxi", "cab", "auto", "metro", "bus", "train", "petrol", "gas", "fuel"],
-  Shopping: ["mall", "shop", "store", "amazon", "flipkart", "myntra", "purchase", "buy"],
-  Utilities: ["electricity", "water", "gas", "internet", "wifi", "broadband", "phone", "mobile", "bill", "recharge"],
-  Housing: ["rent", "maintenance", "apartment", "flat", "house", "property", "mortgage", "loan"],
-  Healthcare: ["doctor", "hospital", "clinic", "medicine", "medical", "health", "pharmacy", "insurance"],
-}
+];
 
 export default function TransactionDashboard() {
-  const { data: session, status } = useSession()
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [fetchingNew, setFetchingNew] = useState(false)
-  const [dataFetched, setDataFetched] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [timeFilter, setTimeFilter] = useState("all")
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [fetchMailsCount, setFetchMailsCount] = useState(20)
-  const [emailCount, setEmailCount] = useState(fetchMailsCount.toString())
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string>("")
+  const { data: session, status } = useSession();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fetchingNew, setFetchingNew] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [fetchMailsCount, setFetchMailsCount] = useState(20);
+  const [emailCount, setEmailCount] = useState(fetchMailsCount.toString());
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [recategorizing, setRecategorizing] = useState(false);
 
-  const fetchFromLocalStorage = () => {
-    const storedTransactions = localStorage.getItem("transactions")
+  // Replace the fetchFromLocalStorage function to use the new AI categorization
+  const fetchFromLocalStorage = async () => {
+    const storedTransactions = localStorage.getItem("transactions");
     if (storedTransactions) {
       try {
-        const parsedTransactions = JSON.parse(storedTransactions)
-        // Apply automatic categorization if categories are not already assigned
-        const categorizedTransactions = parsedTransactions.map((transaction: Transaction) => {
-          if (!transaction.category) {
-            return {
-              ...transaction,
-              category: categorizeTransaction(transaction),
-            }
-          }
-          return transaction
-        })
-        setTransactions(categorizedTransactions)
-        // Update localStorage with categorized transactions
-        localStorage.setItem("transactions", JSON.stringify(categorizedTransactions))
-        setDataFetched(true)
-        return true
+        const parsedTransactions = JSON.parse(storedTransactions);
+
+        // Check if any transactions need categorization
+        const needsCategorization = parsedTransactions.some(
+          (t: Transaction) => !t.category
+        );
+
+        if (needsCategorization) {
+          // Process transactions that need categorization
+          const categorizedTransactions = await Promise.all(
+            parsedTransactions.map(async (transaction: Transaction) => {
+              if (!transaction.category) {
+                try {
+                  // Call the API endpoint instead of the server action
+                  const response = await fetch("/api/categorize", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      description: transaction.reference,
+                      counterparty: transaction.counterparty,
+                      amount: transaction.amount,
+                      type: transaction.type,
+                    }),
+                  });
+
+                  if (response.ok) {
+                    const data = await response.json();
+                    return { ...transaction, category: data.category };
+                  } else {
+                    console.error(
+                      "Error from categorize API:",
+                      await response.text()
+                    );
+                    return { ...transaction, category: "Other" };
+                  }
+                } catch (error) {
+                  console.error("Error categorizing transaction:", error);
+                  return { ...transaction, category: "Other" };
+                }
+              }
+              return transaction;
+            })
+          );
+
+          setTransactions(categorizedTransactions);
+          // Update localStorage with categorized transactions
+          localStorage.setItem(
+            "transactions",
+            JSON.stringify(categorizedTransactions)
+          );
+        } else {
+          setTransactions(parsedTransactions);
+        }
+
+        setDataFetched(true);
+        return true;
       } catch (err) {
-        console.error("Error parsing stored transactions:", err)
+        console.error("Error parsing stored transactions:", err);
       }
     }
-    return false
-  }
+    return false;
+  };
 
-  // Function to automatically categorize a transaction based on its reference or counterparty
-  const categorizeTransaction = (transaction: Transaction): string => {
-    if (transaction.type === "credit") return "Income"
-
-    const textToCheck = (transaction.reference + " " + transaction.counterparty).toLowerCase()
-
-    for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-      if (keywords.some((keyword) => textToCheck.includes(keyword.toLowerCase()))) {
-        return category
-      }
-    }
-
-    return "Other"
-  }
-
-  const fetchTransactions = async (forceRefresh = false, fetchMailsCount = 9) => {
-    if (!session || (loading && !forceRefresh)) return
+  // Update the fetchTransactions function to use the new AI categorization
+  const fetchTransactions = async (
+    forceRefresh = false,
+    fetchMailsCount = 9
+  ) => {
+    if (!session || (loading && !forceRefresh)) return;
 
     // Try local storage first if not forcing refresh
-    if (!forceRefresh && fetchFromLocalStorage()) {
-      return
+    if (!forceRefresh && (await fetchFromLocalStorage())) {
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       // Add the fetchMails parameter to the API URL
-      const response = await fetch(`/api/transactions?fetchMails=${fetchMailsCount}`)
+      const response = await fetch(
+        `/api/transactions?fetchMails=${fetchMailsCount}`
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch transactions")
+        throw new Error("Failed to fetch transactions");
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
-      // Apply automatic categorization
-      const categorizedTransactions = (data.transactions || []).map((transaction: Transaction) => ({
-        ...transaction,
-        category: transaction.category || categorizeTransaction(transaction),
-      }))
+      // Apply AI categorization
+      const transactionsToProcess = data.transactions || [];
+      const categorizedTransactions = await Promise.all(
+        transactionsToProcess.map(async (transaction: Transaction) => {
+          if (!transaction.category) {
+            try {
+              // Call the API endpoint instead of the server action
+              const response = await fetch("/api/categorize", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  description: transaction.reference,
+                  counterparty: transaction.counterparty,
+                  amount: transaction.amount,
+                  type: transaction.type,
+                }),
+              });
 
-      setTransactions(categorizedTransactions)
+              if (response.ok) {
+                const data = await response.json();
+                return { ...transaction, category: data.category };
+              } else {
+                console.error(
+                  "Error from categorize API:",
+                  await response.text()
+                );
+                return { ...transaction, category: "Other" };
+              }
+            } catch (error) {
+              console.error("Error categorizing transaction:", error);
+              return { ...transaction, category: "Other" };
+            }
+          }
+          return transaction;
+        })
+      );
+
+      setTransactions(categorizedTransactions);
 
       // Store in local storage
-      localStorage.setItem("transactions", JSON.stringify(categorizedTransactions))
+      localStorage.setItem(
+        "transactions",
+        JSON.stringify(categorizedTransactions)
+      );
 
-      setDataFetched(true)
+      setDataFetched(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
+  // Update the fetchNewFromGoogle function to use the new AI categorization
   const fetchNewFromGoogle = async () => {
-    if (!session || fetchingNew) return
+    if (!session || fetchingNew) return;
 
-    setFetchingNew(true)
-    setError(null)
+    setFetchingNew(true);
+    setError(null);
 
     try {
       const response = await fetch("/api/transactions/refresh", {
         method: "POST",
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch new transactions")
+        throw new Error("Failed to fetch new transactions");
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
-      // Apply automatic categorization
-      const categorizedTransactions = (data.transactions || []).map((transaction: Transaction) => ({
-        ...transaction,
-        category: transaction.category || categorizeTransaction(transaction),
-      }))
+      // Apply AI categorization
+      const transactionsToProcess = data.transactions || [];
+      const categorizedTransactions = await Promise.all(
+        transactionsToProcess.map(async (transaction: Transaction) => {
+          if (!transaction.category) {
+            try {
+              // Call the API endpoint instead of the server action
+              const response = await fetch("/api/categorize", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  description: transaction.reference,
+                  counterparty: transaction.counterparty,
+                  amount: transaction.amount,
+                  type: transaction.type,
+                }),
+              });
 
-      setTransactions(categorizedTransactions)
+              if (response.ok) {
+                const data = await response.json();
+                return { ...transaction, category: data.category };
+              } else {
+                console.error(
+                  "Error from categorize API:",
+                  await response.text()
+                );
+                return { ...transaction, category: "Other" };
+              }
+            } catch (error) {
+              console.error("Error categorizing transaction:", error);
+              return { ...transaction, category: "Other" };
+            }
+          }
+          return transaction;
+        })
+      );
+
+      setTransactions(categorizedTransactions);
 
       // Update local storage
-      localStorage.setItem("transactions", JSON.stringify(categorizedTransactions))
+      localStorage.setItem(
+        "transactions",
+        JSON.stringify(categorizedTransactions)
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setFetchingNew(false)
+      setFetchingNew(false);
     }
-  }
+  };
+
+  const recategorizeAllTransactions = async () => {
+    if (recategorizing || transactions.length === 0) return;
+
+    setRecategorizing(true);
+    setError(null);
+
+    try {
+      const recategorizedTransactions = await Promise.all(
+        transactions.map(async (transaction) => {
+          try {
+            const response = await fetch("/api/categorize", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                description: transaction.reference,
+                counterparty: transaction.counterparty,
+                amount: transaction.amount,
+                type: transaction.type,
+              }),
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              return { ...transaction, category: data.category };
+            } else {
+              console.error(
+                "Error from categorize API:",
+                await response.text()
+              );
+              return { ...transaction, category: "Other" };
+            }
+          } catch (error) {
+            console.error("Error categorizing transaction:", error);
+            return { ...transaction, category: "Other" };
+          }
+        })
+      );
+
+      setTransactions(recategorizedTransactions);
+      localStorage.setItem(
+        "transactions",
+        JSON.stringify(recategorizedTransactions)
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred during recategorization"
+      );
+    } finally {
+      setRecategorizing(false);
+    }
+  };
 
   const handleFetchWithCount = () => {
-    const count = Number.parseInt(emailCount, 10)
+    const count = Number.parseInt(emailCount, 10);
     if (!isNaN(count) && count > 0) {
-      setFetchMailsCount(count)
-      fetchTransactions(true, count)
-      setDialogOpen(false)
+      setFetchMailsCount(count);
+      fetchTransactions(true, count);
+      setDialogOpen(false);
     }
-  }
+  };
 
-  // Function to update a transaction's category
-  const updateTransactionCategory = (transactionId: string, category: string) => {
+  // Update the updateTransactionCategory function to handle recategorization
+  const updateTransactionCategory = async (
+    transactionId: string,
+    category: string
+  ) => {
     const updatedTransactions = transactions.map((transaction) =>
-      transaction.id === transactionId ? { ...transaction, category } : transaction,
-    )
-    setTransactions(updatedTransactions)
-    localStorage.setItem("transactions", JSON.stringify(updatedTransactions))
-    setEditingTransaction(null)
-  }
+      transaction.id === transactionId
+        ? { ...transaction, category }
+        : transaction
+    );
+    setTransactions(updatedTransactions);
+    localStorage.setItem("transactions", JSON.stringify(updatedTransactions));
+    setEditingTransaction(null);
+  };
 
   // Function to prepare data for the pie chart
   const prepareChartData = (): CategoryData[] => {
-    const expenseTransactions = transactions.filter((t) => t.type === "debit")
+    const expenseTransactions = transactions.filter((t) => t.type === "debit");
 
     // Group by category and sum amounts
-    const categoryTotals: Record<string, number> = {}
+    const categoryTotals: Record<string, number> = {};
     expenseTransactions.forEach((transaction) => {
-      const category = transaction.category || "Other"
-      categoryTotals[category] = (categoryTotals[category] || 0) + transaction.amount
-    })
+      const category = transaction.category || "Other";
+      categoryTotals[category] =
+        (categoryTotals[category] || 0) + transaction.amount;
+    });
 
     // Convert to chart data format
     return Object.entries(categoryTotals)
       .map(([name, value]) => {
-        const categoryInfo = CATEGORIES.find((c) => c.name === name) || { name, color: "#9ca3af" }
+        const categoryInfo = CATEGORIES.find((c) => c.name === name) || {
+          name,
+          color: "#9ca3af",
+        };
         return {
           name,
           value,
           color: categoryInfo.color,
-        }
+        };
       })
-      .sort((a, b) => b.value - a.value) // Sort by value descending
-  }
+      .sort((a, b) => b.value - a.value); // Sort by value descending
+  };
 
   // Then update your useEffect
   useEffect(() => {
     // Check local storage first, then API if needed
     if (session && !dataFetched && !loading) {
-      if (!fetchFromLocalStorage()) {
-        fetchTransactions(false, fetchMailsCount)
-      }
+      fetchFromLocalStorage();
     }
-  }, [session, dataFetched, fetchMailsCount])
+  }, [session, dataFetched, fetchMailsCount]);
 
   if (status === "loading") {
-    return <DashboardSkeleton />
+    return <DashboardSkeleton />;
   }
 
   if (!session) {
@@ -285,71 +467,93 @@ export default function TransactionDashboard() {
           <Wallet className="h-12 w-12 text-primary" />
         </div>
         <h2 className="text-2xl font-bold">Transaction Dashboard</h2>
-        <p className="text-muted-foreground">Please sign in to view your transactions</p>
+        <p className="text-muted-foreground">
+          Please sign in to view your transactions
+        </p>
         <Button className="mt-4">Sign In</Button>
       </div>
-    )
+    );
   }
 
   const totalBalance = transactions.reduce((sum, transaction) => {
-    return sum + (transaction.type === "credit" ? transaction.amount : -transaction.amount)
-  }, 0)
+    return (
+      sum +
+      (transaction.type === "credit" ? transaction.amount : -transaction.amount)
+    );
+  }, 0);
 
-  const totalIncome = transactions.filter((t) => t.type === "credit").reduce((sum, t) => sum + t.amount, 0)
+  const totalIncome = transactions
+    .filter((t) => t.type === "credit")
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions.filter((t) => t.type === "debit").reduce((sum, t) => sum + t.amount, 0)
+  const totalExpenses = transactions
+    .filter((t) => t.type === "debit")
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const filteredTransactions = transactions.filter((transaction) => {
     // Search filter
-    const searchLower = searchQuery.toLowerCase()
+    const searchLower = searchQuery.toLowerCase();
     const matchesSearch =
       searchQuery === "" ||
       transaction.counterparty.toLowerCase().includes(searchLower) ||
-      transaction.reference.toLowerCase().includes(searchLower)
+      transaction.reference.toLowerCase().includes(searchLower);
 
     // Time filter
-    const transactionDate = new Date(transaction.date)
-    const now = new Date()
-    let matchesTime = true
+    const transactionDate = new Date(transaction.date);
+    const now = new Date();
+    let matchesTime = true;
 
     if (timeFilter === "today") {
-      const today = new Date()
-      matchesTime = transactionDate.toDateString() === today.toDateString()
+      const today = new Date();
+      matchesTime = transactionDate.toDateString() === today.toDateString();
     } else if (timeFilter === "week") {
-      const weekAgo = new Date()
-      weekAgo.setDate(now.getDate() - 7)
-      matchesTime = transactionDate >= weekAgo
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      matchesTime = transactionDate >= weekAgo;
     } else if (timeFilter === "month") {
-      const monthAgo = new Date()
-      monthAgo.setMonth(now.getMonth() - 1)
-      matchesTime = transactionDate >= monthAgo
+      const monthAgo = new Date();
+      monthAgo.setMonth(now.getMonth() - 1);
+      matchesTime = transactionDate >= monthAgo;
     }
 
-    return matchesSearch && matchesTime
-  })
+    return matchesSearch && matchesTime;
+  });
 
-  const chartData = prepareChartData()
+  const chartData = prepareChartData();
 
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Transaction Dashboard</h1>
-          <p className="text-muted-foreground">Track and manage your financial activities</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Transaction Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Track and manage your financial activities
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2" disabled={loading}>
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                disabled={loading}
+              >
+                <RefreshCw
+                  size={16}
+                  className={loading ? "animate-spin" : ""}
+                />
                 {loading ? "Refreshing..." : "Refresh"}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Fetch Transactions</DialogTitle>
-                <DialogDescription>Enter the number of emails to process for transaction data.</DialogDescription>
+                <DialogDescription>
+                  Enter the number of emails to process for transaction data.
+                </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -380,7 +584,10 @@ export default function TransactionDashboard() {
             className="flex items-center gap-2"
             disabled={fetchingNew}
           >
-            <RefreshCw size={16} className={fetchingNew ? "animate-spin" : ""} />
+            <RefreshCw
+              size={16}
+              className={fetchingNew ? "animate-spin" : ""}
+            />
             {fetchingNew ? "Fetching New..." : "Fetch New Emails"}
           </Button>
 
@@ -402,7 +609,9 @@ export default function TransactionDashboard() {
       </div>
 
       {error && (
-        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">{error}</div>
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
+          {error}
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -411,11 +620,16 @@ export default function TransactionDashboard() {
             <CardDescription>Current Balance</CardDescription>
             <CardTitle className="flex items-center text-3xl">
               <IndianRupee size={24} className="mr-1" />
-              {totalBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {totalBalance.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">Updated {new Date().toLocaleDateString()}</div>
+            <div className="text-xs text-muted-foreground">
+              Updated {new Date().toLocaleDateString()}
+            </div>
           </CardContent>
           <CardFooter className="pt-1">
             <Button variant="outline" size="sm" className="w-full">
@@ -430,7 +644,10 @@ export default function TransactionDashboard() {
             <CardDescription>Total Income</CardDescription>
             <CardTitle className="flex items-center text-3xl text-green-600 dark:text-green-500">
               <ArrowDownLeft size={24} className="mr-1" />₹
-              {totalIncome.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {totalIncome.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -452,7 +669,10 @@ export default function TransactionDashboard() {
             <CardDescription>Total Expenses</CardDescription>
             <CardTitle className="flex items-center text-3xl text-red-600 dark:text-red-500">
               <ArrowUpRight size={24} className="mr-1" />₹
-              {totalExpenses.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {totalExpenses.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -473,28 +693,48 @@ export default function TransactionDashboard() {
       {/* Expense Breakdown Section */}
       <Card className="overflow-hidden">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
                 <PieChartIcon className="h-5 w-5" />
-                Expense Breakdown
+                AI-Powered Expense Breakdown
+                <Badge variant="outline" className="ml-2 bg-primary/10">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Gemini AI
+                </Badge>
               </CardTitle>
-              <CardDescription>Visualize your spending by category</CardDescription>
+              <CardDescription>
+                Intelligent categorization of your spending patterns
+              </CardDescription>
             </div>
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <SelectValue placeholder="Filter by time" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={recategorizeAllTransactions}
+                variant="outline"
+                className="flex items-center gap-2"
+                disabled={recategorizing || transactions.length === 0}
+              >
+                <Sparkles
+                  size={16}
+                  className={recategorizing ? "animate-pulse" : ""}
+                />
+                {recategorizing ? "Categorizing..." : "AI Categorize"}
+              </Button>
+              <Select value={timeFilter} onValueChange={setTimeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <SelectValue placeholder="Filter by time" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -511,7 +751,9 @@ export default function TransactionDashboard() {
                       outerRadius={120}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
                     >
                       {chartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -519,7 +761,10 @@ export default function TransactionDashboard() {
                     </Pie>
                     <Tooltip
                       formatter={(value: number) => [
-                        `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                        `₹${value.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`,
                         "Amount",
                       ]}
                     />
@@ -531,36 +776,63 @@ export default function TransactionDashboard() {
                   <div className="rounded-full bg-muted p-6 mb-4">
                     <PieChartIcon className="h-10 w-10 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-medium">No expense data available</h3>
-                  <p className="text-muted-foreground mt-1">Try changing your filter criteria</p>
+                  <h3 className="text-lg font-medium">
+                    No expense data available
+                  </h3>
+                  <p className="text-muted-foreground mt-1">
+                    Try changing your filter criteria
+                  </p>
                 </div>
               )}
             </div>
             <div className="lg:col-span-2">
-              <h3 className="text-lg font-medium mb-4">Top Expenses by Category</h3>
+              <h3 className="text-lg font-medium mb-4">
+                Top Expenses by Category
+              </h3>
               <div className="space-y-4">
                 {chartData.slice(0, 5).map((category, index) => (
-                  <div key={index} className="flex items-center justify-between">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }}></div>
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      ></div>
                       <span>{category.name}</span>
                     </div>
                     <span className="font-medium">
-                      ₹{category.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₹
+                      {category.value.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
                   </div>
                 ))}
               </div>
 
+              {/* Update the Category Management section to reflect AI-powered categorization */}
               <div className="mt-6">
-                <h3 className="text-lg font-medium mb-4">Category Management</h3>
+                <h3 className="text-lg font-medium mb-4">
+                  AI-Powered Category Management
+                </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  You can assign categories to your transactions by clicking the edit button on any transaction.
+                  Transactions are automatically categorized using Gemini AI.
+                  You can manually adjust categories by clicking the edit button
+                  on any transaction.
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {CATEGORIES.map((category) => (
-                    <div key={category.name} className="flex items-center gap-1.5 text-xs p-1.5 rounded-md border">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }}></div>
+                    <div
+                      key={category.name}
+                      className="flex items-center gap-1.5 text-xs p-1.5 rounded-md border"
+                    >
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      ></div>
                       <span className="truncate">{category.name}</span>
                     </div>
                   ))}
@@ -613,47 +885,58 @@ export default function TransactionDashboard() {
             transactions={filteredTransactions}
             loading={loading}
             onEditCategory={(transaction) => {
-              setEditingTransaction(transaction)
-              setSelectedCategory(transaction.category || "")
+              setEditingTransaction(transaction);
+              setSelectedCategory(transaction.category || "");
             }}
           />
         </TabsContent>
 
         <TabsContent value="income" className="m-0">
           <TransactionList
-            transactions={filteredTransactions.filter((t) => t.type === "credit")}
+            transactions={filteredTransactions.filter(
+              (t) => t.type === "credit"
+            )}
             loading={loading}
             onEditCategory={(transaction) => {
-              setEditingTransaction(transaction)
-              setSelectedCategory(transaction.category || "")
+              setEditingTransaction(transaction);
+              setSelectedCategory(transaction.category || "");
             }}
           />
         </TabsContent>
 
         <TabsContent value="expenses" className="m-0">
           <TransactionList
-            transactions={filteredTransactions.filter((t) => t.type === "debit")}
+            transactions={filteredTransactions.filter(
+              (t) => t.type === "debit"
+            )}
             loading={loading}
             onEditCategory={(transaction) => {
-              setEditingTransaction(transaction)
-              setSelectedCategory(transaction.category || "")
+              setEditingTransaction(transaction);
+              setSelectedCategory(transaction.category || "");
             }}
           />
         </TabsContent>
       </Tabs>
 
       {/* Category Edit Dialog */}
-      <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
+      <Dialog
+        open={!!editingTransaction}
+        onOpenChange={(open) => !open && setEditingTransaction(null)}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Transaction Category</DialogTitle>
-            <DialogDescription>Assign a category to this transaction for better expense tracking.</DialogDescription>
+            <DialogDescription>
+              Assign a category to this transaction for better expense tracking.
+            </DialogDescription>
           </DialogHeader>
           {editingTransaction && (
             <div className="py-4">
               <div className="mb-4">
                 <p className="font-medium">{editingTransaction.counterparty}</p>
-                <p className="text-sm text-muted-foreground">{editingTransaction.reference}</p>
+                <p className="text-sm text-muted-foreground">
+                  {editingTransaction.reference}
+                </p>
                 <p className="text-sm font-medium mt-1">
                   ₹
                   {editingTransaction.amount.toLocaleString("en-IN", {
@@ -668,11 +951,16 @@ export default function TransactionDashboard() {
                   <div
                     key={category.name}
                     className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-muted/50 ${
-                      selectedCategory === category.name ? "border-primary bg-primary/10" : ""
+                      selectedCategory === category.name
+                        ? "border-primary bg-primary/10"
+                        : ""
                     }`}
                     onClick={() => setSelectedCategory(category.name)}
                   >
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }}></div>
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    ></div>
                     <span>{category.name}</span>
                   </div>
                 ))}
@@ -680,13 +968,19 @@ export default function TransactionDashboard() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTransaction(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setEditingTransaction(null)}
+            >
               Cancel
             </Button>
             <Button
               onClick={() => {
                 if (editingTransaction && selectedCategory) {
-                  updateTransactionCategory(editingTransaction.id, selectedCategory)
+                  updateTransactionCategory(
+                    editingTransaction.id,
+                    selectedCategory
+                  );
                 }
               }}
             >
@@ -696,7 +990,7 @@ export default function TransactionDashboard() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
 
 function TransactionList({
@@ -704,9 +998,9 @@ function TransactionList({
   loading,
   onEditCategory,
 }: {
-  transactions: Transaction[]
-  loading: boolean
-  onEditCategory: (transaction: Transaction) => void
+  transactions: Transaction[];
+  loading: boolean;
+  onEditCategory: (transaction: Transaction) => void;
 }) {
   if (loading) {
     return (
@@ -728,7 +1022,7 @@ function TransactionList({
           </Card>
         ))}
       </div>
-    )
+    );
   }
 
   if (transactions.length === 0) {
@@ -738,15 +1032,20 @@ function TransactionList({
           <Clock className="h-10 w-10 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-medium">No transactions found</h3>
-        <p className="text-muted-foreground mt-1">Try changing your search or filter criteria</p>
+        <p className="text-muted-foreground mt-1">
+          Try changing your search or filter criteria
+        </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-4">
       {transactions.map((transaction) => (
-        <Card key={transaction.id} className="overflow-hidden hover:shadow-md transition-shadow">
+        <Card
+          key={transaction.id}
+          className="overflow-hidden hover:shadow-md transition-shadow"
+        >
           <CardContent className="p-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 gap-4">
               <div className="flex items-center gap-3">
@@ -758,7 +1057,11 @@ function TransactionList({
                   }
                 >
                   <AvatarFallback>
-                    {transaction.type === "credit" ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                    {transaction.type === "credit" ? (
+                      <ArrowDownLeft size={16} />
+                    ) : (
+                      <ArrowUpRight size={16} />
+                    )}
                   </AvatarFallback>
                 </Avatar>
 
@@ -780,7 +1083,9 @@ function TransactionList({
 
               <div className="flex items-center gap-3 self-end sm:self-auto">
                 <Badge
-                  variant={transaction.type === "credit" ? "outline" : "secondary"}
+                  variant={
+                    transaction.type === "credit" ? "outline" : "secondary"
+                  }
                   className={
                     transaction.type === "credit"
                       ? "border-green-200 text-green-700 dark:border-green-800 dark:text-green-400"
@@ -791,10 +1096,17 @@ function TransactionList({
                 </Badge>
 
                 <div
-                  className={`text-lg font-semibold ${transaction.type === "credit" ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"}`}
+                  className={`text-lg font-semibold ${
+                    transaction.type === "credit"
+                      ? "text-green-600 dark:text-green-500"
+                      : "text-red-600 dark:text-red-500"
+                  }`}
                 >
                   {transaction.type === "credit" ? "+" : "-"}₹
-                  {transaction.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {transaction.amount.toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </div>
 
                 <DropdownMenu>
@@ -806,7 +1118,9 @@ function TransactionList({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => onEditCategory(transaction)}>
+                    <DropdownMenuItem
+                      onClick={() => onEditCategory(transaction)}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Category
                     </DropdownMenuItem>
@@ -821,14 +1135,15 @@ function TransactionList({
 
             {transaction.reference && (
               <div className="px-4 py-2 bg-muted/50 text-sm">
-                <span className="font-medium">Reference:</span> {transaction.reference}
+                <span className="font-medium">Reference:</span>{" "}
+                {transaction.reference}
               </div>
             )}
           </CardContent>
         </Card>
       ))}
     </div>
-  )
+  );
 }
 
 function DashboardSkeleton() {
@@ -924,5 +1239,5 @@ function DashboardSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }
