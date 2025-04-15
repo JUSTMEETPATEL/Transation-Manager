@@ -9,11 +9,12 @@ export async function getGmailClient(accessToken: string) {
 
 export async function fetchTransactionEmails(accessToken: string) {
   const gmail = await getGmailClient(accessToken);
-  
+//   console.log(gmail);
+//   console.log("Got Gmail Client");
   // Query for HDFC transaction emails - adjust for your bank
   const res = await gmail.users.messages.list({
     userId: 'me',
-    q: 'from:HDFC subject:"transaction" OR subject:"debited" OR subject:"credited"',
+    q: 'from:HDFC Bank InstaAlerts <alerts@hdfcbank.net> subject:"View: Account update for your HDFC Bank A/c" OR subject:"❗ You have done a UPI txn. Check details!" OR subject:"credited"',
     maxResults: 20,
   });
   
@@ -29,6 +30,9 @@ export async function fetchTransactionEmails(accessToken: string) {
       emails.push(email.data);
     }
   }
+
+//   console.log(emails);
+//   console.log("Got emails");
   
   return emails;
 }

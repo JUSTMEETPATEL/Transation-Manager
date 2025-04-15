@@ -26,6 +26,8 @@ export async function GET() {
     
     // Fetch emails
     const emails = await fetchTransactionEmails(accessToken);
+
+    // console.log('Fetched emails:', emails);
     
     // Parse emails to extract transactions
     const transactions = [];
@@ -33,6 +35,8 @@ export async function GET() {
     for (const email of emails) {
       const content = Buffer.from(email.payload?.body?.data || '', 'base64').toString();
       const transaction = parseTransactionEmail(content);
+
+      console.log('Parsed transaction:', transaction);
       
       if (transaction) {
         // Save to database

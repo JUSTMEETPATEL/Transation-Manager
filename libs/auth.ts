@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/auth.ts
 import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -22,16 +21,17 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, token, user }) {
-      // Include the user's ID from the database in the session
-      if (session.user) {
-        session.user.id = user.id;
+    // Fix: Change the session callback to use token instead of user
+    async session({ session, token }) {
+      // Add user ID from token to session
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
       }
       
       // Forward the access token to the client
       if (token) {
-        session.accessToken = token.accessToken;
-        session.refreshToken = token.refreshToken;
+        session.accessToken = token.accessToken as string;
+        session.refreshToken = token.refreshToken as string;
       }
       
       return session;
@@ -81,7 +81,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/auth/signin",
-    // You can define custom error, verification and other pages here too
   },
   session: {
     strategy: "jwt", // Use JWT strategy to make token available for token callback
@@ -110,6 +109,7 @@ declare module "next-auth/jwt" {
     accessToken?: string;
     refreshToken?: string;
     expiresAt?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     profile?: any;
     error?: string;
   }

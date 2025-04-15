@@ -10,6 +10,9 @@ export default function HomePage() {
       {session ? (
         <>
           <h2 className="text-xl">Welcome, {session.user?.name}</h2>
+          <button onClick={() => window.location.href = '/dashboard'} className="mt-4 px-4 py-2 mr-4 bg-white text-black rounded">
+            Dashboard
+          </button>
           <button onClick={() => signOut()} className="mt-4 px-4 py-2 bg-red-500 text-white rounded">
             Sign out
           </button>
