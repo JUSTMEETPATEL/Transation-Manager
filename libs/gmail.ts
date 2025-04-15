@@ -15,7 +15,7 @@ export async function fetchTransactionEmails(accessToken: string) {
   const res = await gmail.users.messages.list({
     userId: 'me',
     q: 'from:HDFC Bank InstaAlerts <alerts@hdfcbank.net> subject:"View: Account update for your HDFC Bank A/c" OR subject:"❗ You have done a UPI txn. Check details!" OR subject:"credited"',
-    maxResults: 5000000, // Increased limit to fetch more transaction emails
+    maxResults: 20, // Increased limit to fetch more transaction emails
   });
   
   const messages = res.data.messages || [];
