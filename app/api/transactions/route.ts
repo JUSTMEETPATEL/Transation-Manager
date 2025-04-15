@@ -1,13 +1,13 @@
 // app/api/transactions/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/libs/auth';
-import { fetchTransactionEmails, getEmailContent } from '@/libs/gmail';
-import { parseTransactionEmail } from '@/libs/transactionParser';
-import { prisma } from '@/libs/prisma';
+import { authOptions } from '@/lib/auth';
+import { fetchTransactionEmails, getEmailContent } from '@/lib/gmail';
+import { parseTransactionEmail } from '@/lib/transactionParser';
+import { prisma } from '@/lib/prisma';
 
 
-export async function GET() {
+export async function GET(request: Request) {
   // Prevent caching which can cause repeated calls
   const headers = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -16,6 +16,10 @@ export async function GET() {
   };
 
   try {
+    // Get the URL and extract the fetchMails parameter
+    const { searchParams } = new URL(request.url);
+    const fetchMails = parseInt(searchParams.get('fetchMails') || '20', 10);
+    
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
@@ -28,8 +32,8 @@ export async function GET() {
       return NextResponse.json({ error: 'No access token available' }, { status: 400, headers });
     }
     
-    // Fetch emails
-    const emails = await fetchTransactionEmails(accessToken);
+    // Fetch emails with the specified number
+    const emails = await fetchTransactionEmails(accessToken, fetchMails);
     
     // Parse emails to extract transactions
     const transactions = [];
@@ -42,6 +46,8 @@ export async function GET() {
         
         // Parse transaction from content
         const transaction = parseTransactionEmail(content, email.id || '');
+
+
         
         if (transaction) {
           try {

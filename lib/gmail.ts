@@ -8,14 +8,14 @@ export async function getGmailClient(accessToken: string) {
   return google.gmail({ version: 'v1', auth });
 }
 
-export async function fetchTransactionEmails(accessToken: string) {
+export async function fetchTransactionEmails(accessToken: string, maxResults: number = 20) {
   const gmail = await getGmailClient(accessToken);
   
   // Query for HDFC transaction emails
   const res = await gmail.users.messages.list({
     userId: 'me',
     q: 'from:HDFC Bank InstaAlerts <alerts@hdfcbank.net> subject:"View: Account update for your HDFC Bank A/c" OR subject:"❗ You have done a UPI txn. Check details!" OR subject:"credited"',
-    maxResults: 20, // Increased limit to fetch more transaction emails
+    maxResults: maxResults, // Increased limit to fetch more transaction emails
   });
   
   const messages = res.data.messages || [];
